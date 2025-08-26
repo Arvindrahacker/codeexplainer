@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeExplainer - Understand Your Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+        }
+        
+        .code-input {
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .explanation-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .line-explanation {
+            background: white;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .line-number {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .code-snippet {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .language-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .btn-analyze {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: bold;
+        }
+        
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* AI Response Styling */
+        .explanation-card h1 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .explanation-card h2 {
+            color: #34495e;
+            font-size: 1.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .explanation-card h3 {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            margin-top: 1.2rem;
+            margin-bottom: 0.6rem;
+        }
+        
+        .explanation-card h4 {
+            color: #34495e;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .explanation-card h5 {
+            color: #2c3e50;
+            font-size: 1rem;
+            margin-top: 0.8rem;
+            margin-bottom: 0.4rem;
+        }
+        
+        .explanation-card h6 {
+            color: #34495e;
+            font-size: 0.9rem;
+            margin-top: 0.6rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .explanation-card b {
+            color: #667eea;
+            font-weight: 600;
+        }
+        /* Rendered markdown/code styles */
+        .explanation-card pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 14px;
+            border-radius: 8px;
+            overflow: auto;
+            border-left: 4px solid #667eea;
+        }
+        .explanation-card code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+        }
+        
+        /* Enhanced UI Styles */
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-section .container {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            border-bottom: none;
+            padding: 20px 25px;
+        }
+        
+        .code-input {
+            min-height: 500px;
+            height: 60vh;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            transition: border-color 0.3s ease;
+            background: #f8f9fa;
+            resize: vertical;
+        }
+        
+        .code-input:focus {
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-analyze {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 15px 35px;
+            font-weight: bold;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-analyze::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-analyze:hover::before {
+            left: 100%;
+        }
+        
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-analyze:disabled {
+            opacity: 0.7;
+            transform: none;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            border-color: #6c757d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        /* Editor toolbar polish */
+        .editor-toolbar .btn {
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        #fileName {
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .code-input.nowrap {
+            white-space: pre;
+            overflow: auto;
+        }
+
+        /* Actions row layout polish */
+        .actions-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* allow wrapping to avoid overlap */
+            gap: 8px;
+            width: 100%;
+        }
+        .actions-row .btn,
+        .actions-row .btn-group {
+            white-space: nowrap; /* avoid ugly text wraps */
+            flex: 0 1 auto;      /* allow shrinking to avoid overlap */
+            display: inline-flex; /* consistent icon/text alignment */
+            align-items: center;
+        }
+        /* Elegant unified styling for action buttons */
+        .actions-row .btn {
+            height: 42px;
+            padding: 0 16px;
+            border-radius: 9999px;
+            font-weight: 600;
+            letter-spacing: .2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color .2s ease, box-shadow .2s ease, transform .06s ease, border-color .2s ease, color .2s ease;
+        }
+        .actions-row .btn i { font-size: .95em; }
+        .actions-row .btn:active { transform: translateY(0.5px) scale(0.99); }
+        .actions-row .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,.25); }
+
+        /* Primary CTA: subtle gradient, no hard border, soft shadow */
+        #analyzeBtn.btn-primary {
+            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 6px 16px rgba(118,75,162,.18);
+        }
+        #analyzeBtn.btn-primary:hover { filter: brightness(1.03); box-shadow: 0 8px 20px rgba(118,75,162,.22); }
+        #analyzeBtn.btn-primary:active { filter: brightness(0.98); box-shadow: 0 4px 12px rgba(118,75,162,.18); }
+
+        /* Secondary buttons: soft outline + subtle hover */
+        .actions-row .btn-outline-secondary {
+            color: #334155;
+            background-color: #ffffff;
+            border-color: #cfd8e3; /* slate-200 */
+            box-shadow: 0 1px 0 rgba(16,24,40,.04);
+        }
+        .actions-row .btn-outline-secondary:hover { background-color: #f8fafc; border-color: #94a3b8; box-shadow: 0 2px 8px rgba(2,6,23,.06); }
+        .actions-row .btn-outline-secondary:active { background-color: #eef2f7; }
+
+        /* Neon style specifically for the Choose file button */
+        #fileBtn {
+            background-image: linear-gradient(135deg, #00f5d4 0%, #00d9ff 100%);
+            color: #071019;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0,217,255,.25);
+        }
+        #fileBtn:hover {
+            background: linear-gradient(135deg, #00f5d4 0%, #00d9ff 100%);
+            filter: brightness(1.05);
+            box-shadow: 0 10px 28px rgba(0,217,255,.35);
+        }
+        #fileBtn:active {
+            background: linear-gradient(135deg, #00e9cc 0%, #00cfff 100%);
+            filter: brightness(.98);
+            box-shadow: 0 6px 16px rgba(0,217,255,.25);
+        }
+        #fileBtn i { color: inherit; }
+
+        /* Neon hover/active for all toolbar buttons (light mode), excluding primary Explain Code */
+        .actions-row .btn:not(#analyzeBtn):not(:disabled):not(.disabled):hover,
+        .actions-row .btn-group > .btn:not(#analyzeBtn):not(:disabled):not(.disabled):hover {
+            background: linear-gradient(135deg, #00f5d4 0%, #00d9ff 100%);
+            color: #071019;
+            border-color: transparent;
+            box-shadow: 0 10px 28px rgba(0,217,255,.35);
+        }
+        .actions-row .btn:not(#analyzeBtn):not(:disabled):not(.disabled):active,
+        .actions-row .btn-group > .btn:not(#analyzeBtn):not(:disabled):not(.disabled):active {
+            background: linear-gradient(135deg, #00e9cc 0%, #00cfff 100%);
+            color: #071019;
+            border-color: transparent;
+            box-shadow: 0 6px 16px rgba(0,217,255,.25);
+        }
+
+        /* Dropdown toggle pill shape */
+        .actions-row .btn-group > .btn { border-radius: 9999px; }
+        .actions-row .dropdown-menu { border-radius: 12px; box-shadow: 0 12px 36px rgba(2,6,23,.12); }
+        /* Keep primary CTA readable */
+        .actions-row .btn-analyze {
+            min-width: 170px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Keep primary (#analyzeBtn) original hover/active styling (no neon) */
+        /* Left and right tool groups */
+        .actions-left { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; }
+        .actions-right { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; margin-left: auto; flex-wrap: wrap; }
+
+        /* File name truncation to avoid crowding */
+        #fileName {
+            max-width: 220px;
+            display: inline-block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        /* Clusters to control desktop ordering and wrapping */
+        .primary-cluster {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap; /* keep Choose file right of Explain on desktop */
+        }
+        .secondary-cluster {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* File drop highlight */
+        .drop-highlight {
+            outline: 2px dashed #667eea;
+            outline-offset: 6px;
+            background: rgba(102, 126, 234, 0.06);
+        }
+        
+        /* Typing Animation */
+        .typing-animation {
+            display: none;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typing-bounce 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing-bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .typing-text {
+            color: #667eea;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        /* Enhanced Explanation Card */
+        .explanation-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .explanation-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .line-explanation {
+            background: white;
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .line-explanation:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .line-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .code-snippet {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .language-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+        
+        /* Loading Animation */
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Animation Classes */
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 60px 0;
+            }
+            
+            .card-header {
+                padding: 15px 20px;
+            }
+            
+            .explanation-card {
+                padding: 20px;
+            }
+            /* Stack action rows vertically and make buttons full width on mobile */
+            .actions-row {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 8px !important;
+            }
+            .actions-left,
+            .actions-right {
+                width: 100%;
+            }
+            .actions-row .btn,
+            .actions-row .btn-group {
+                width: 100%;
+            }
+            .actions-right { margin-left: 0; }
+            /* Hide long file name on mobile */
+            #fileName { display: none; }
+            .primary-cluster,
+            .secondary-cluster {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .actions-row .btn { height: 44px; }
+        }
+
+        /* Tablet tweaks */
+        @media (max-width: 992px) and (min-width: 769px) {
+            #fileName { max-width: 160px; }
+        }
+
+        /* Mobile (smaller than 576px) responsive tweaks */
+        @media (max-width: 576px) {
+            .editor-toolbar {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            #editorCounter {
+                width: 100%;
+                text-align: left;
+                margin-top: 6px;
+                font-size: 12px;
+            }
+            .actions-row {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 8px !important;
+            }
+            .actions-row > .d-flex {
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            #analyzeBtn,
+            #fileBtn,
+            #clearBtn {
+                width: 100%;
+            }
+            .code-input {
+                min-height: 300px;
+                height: 40vh;
+                font-size: 14px;
+            }
+            .card {
+                box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            }
+            .hero-section {
+                padding: 50px 0;
+            }
+        }
+
+        /* Floating theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 1050;
+            border-radius: 999px;
+            padding: 8px 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Base/light mode text color */
+        html:not([data-theme="dark"]) body {
+            color: #000;
+        }
+
+        /* Normalize Bootstrap text utilities to follow theme */
+        html:not([data-theme="dark"]) .text-primary,
+        html:not([data-theme="dark"]) .text-success,
+        html:not([data-theme="dark"]) .text-danger,
+        html:not([data-theme="dark"]) .text-warning,
+        html:not([data-theme="dark"]) .text-info,
+        html:not([data-theme="dark"]) .text-secondary,
+        html:not([data-theme="dark"]) .text-dark {
+            color: #000 !important;
+        }
+
+        /* Dark mode overrides */
+        [data-theme="dark"] body {
+            background: #0b1220;
+            color: #fff;
+        }
+        [data-theme="dark"] .text-primary,
+        [data-theme="dark"] .text-success,
+        [data-theme="dark"] .text-danger,
+        [data-theme="dark"] .text-warning,
+        [data-theme="dark"] .text-info,
+        [data-theme="dark"] .text-secondary,
+        [data-theme="dark"] .text-dark {
+            color: #fff !important;
+        }
+        [data-theme="dark"] .hero-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%);
+            color: #fff;
+        }
+        [data-theme="dark"] .card {
+            background: #0f172a;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+        [data-theme="dark"] .card-header.bg-primary {
+            background-color: #1d4ed8 !important;
+        }
+        [data-theme="dark"] .card-header.bg-success {
+            background-color: #16a34a !important;
+        }
+        [data-theme="dark"] .code-input {
+            background: #111827;
+            color: #fff;
+            border-color: #374151;
+        }
+        [data-theme="dark"] .code-input:focus {
+            background: #0b1220;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+        }
+        [data-theme="dark"] .explanation-card {
+            background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+            border-left-color: #60a5fa;
+            color: #fff;
+        }
+        [data-theme="dark"] .line-explanation {
+            background: #0b1220;
+            border-color: #1f2937;
+        }
+        [data-theme="dark"] .code-snippet {
+            background: #111827;
+            color: #fff;
+            border-left-color: #60a5fa;
+        }
+        [data-theme="dark"] .language-badge {
+            background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+            color: #071019;
+        }
+        [data-theme="dark"] .text-muted {
+            color: #9ca3af !important;
+        }
+        [data-theme="dark"] .drop-highlight {
+            outline-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.08);
+        }
+        [data-theme="dark"] .btn-outline-secondary {
+            color: #e5e7eb;
+            border-color: #6b7280;
+        }
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            border-color: #6b7280;
+        }
+        [data-theme="dark"] .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+        }
+        [data-theme="dark"] footer.bg-dark {
+            background-color: #0b1220 !important;
+        }
+        /* Dark mode: action buttons and dropdowns */
+        [data-theme="dark"] .actions-row .btn { color: #e5e7eb; }
+        [data-theme="dark"] .actions-row .btn-outline-secondary {
+            color: #e5e7eb;
+            background-color: #0b1220;
+            border-color: #334155;
+            box-shadow: 0 1px 0 rgba(2, 6, 23, .6);
+        }
+        [data-theme="dark"] .actions-row .btn-outline-secondary:hover {
+            background-color: #111827;
+            border-color: #4b5563;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+        }
+        [data-theme="dark"] .actions-row .btn-outline-secondary:active { background-color: #0f172a; }
+        [data-theme="dark"] #analyzeBtn.btn-primary {
+            background-image: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            border: none;
+            box-shadow: 0 6px 16px rgba(37, 99, 235, .35);
+        }
+        [data-theme="dark"] #analyzeBtn.btn-primary:hover { filter: brightness(1.04); box-shadow: 0 8px 22px rgba(37, 99, 235, .42); }
+        [data-theme="dark"] #analyzeBtn.btn-primary:active { filter: brightness(.98); box-shadow: 0 4px 12px rgba(37, 99, 235, .30); }
+        [data-theme="dark"] .actions-row .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(96, 165, 250, .35); }
+        [data-theme="dark"] #fileBtn {
+            background-image: linear-gradient(135deg, #00f5d4 0%, #00d9ff 100%);
+            color: #001018;
+            border: none;
+            box-shadow: 0 8px 22px rgba(0,217,255,.45), 0 0 0 1px rgba(0,217,255,.35) inset;
+        }
+        [data-theme="dark"] #fileBtn:hover {
+            background: linear-gradient(135deg, #00f5d4 0%, #00d9ff 100%);
+            filter: brightness(1.06);
+            box-shadow: 0 10px 28px rgba(0,217,255,.55), 0 0 0 1px rgba(0,217,255,.45) inset;
+        }
+        [data-theme="dark"] #fileBtn:active {
+            background: linear-gradient(135deg, #00e9cc 0%, #00cfff 100%);
+            filter: brightness(.98);
+            box-shadow: 0 6px 16px rgba(0,217,255,.40), 0 0 0 1px rgba(0,217,255,.35) inset;
+        }
+        /* Neon hover/active for all toolbar buttons (dark mode) */
+        [data-theme="dark"] .actions-row .btn:not(#analyzeBtn):not(:disabled):not(.disabled):hover,
+        [data-theme="dark"] .actions-row .btn-group > .btn:not(#analyzeBtn):not(:disabled):not(.disabled):hover {
+            background: linear-gradient(135deg, #00f5d4 0%, #00d9ff 100%);
+            color: #001018;
+            border-color: transparent;
+            box-shadow: 0 10px 28px rgba(0,217,255,.55), 0 0 0 1px rgba(0,217,255,.35) inset;
+        }
+        [data-theme="dark"] .actions-row .btn:not(#analyzeBtn):not(:disabled):not(.disabled):active,
+        [data-theme="dark"] .actions-row .btn-group > .btn:not(#analyzeBtn):not(:disabled):not(.disabled):active {
+            background: linear-gradient(135deg, #00e9cc 0%, #00cfff 100%);
+            color: #001018;
+            border-color: transparent;
+            box-shadow: 0 6px 16px rgba(0,217,255,.45), 0 0 0 1px rgba(0,217,255,.35) inset;
+        }
+        /* Keep primary (#analyzeBtn) original hover/active in dark mode (no neon) */
+        [data-theme="dark"] .actions-row .dropdown-menu {
+            background-color: #0b1220;
+            color: #e5e7eb;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, .45);
+        }
+        [data-theme="dark"] .actions-row .dropdown-menu .dropdown-item { color: #e5e7eb; }
+        [data-theme="dark"] .actions-row .dropdown-menu .dropdown-item:hover {
+            background-color: #111827;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-3">CodeExplainer</h1>
+            <p class="lead">Paste your code and get instant, AI-powered explanations</p>
+            <p class="mb-0">Supports Python & JavaScript & many more languages</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <div class="row">
+            <!-- Code Input Section -->
+            <div class="col-lg-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-code"></i> Paste Your Code</h5>
+                    </div>
+                    <div class="card-body">
+                        <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 editor-toolbar">
+                            <div class="d-flex align-items-center gap-2">
+                                <button id="copyBtn" type="button" class="btn btn-sm btn-outline-secondary"><i class="fas fa-copy me-1"></i>Copy</button>
+                                <button id="wrapToggle" type="button" class="btn btn-sm btn-outline-secondary"><i class="fas fa-text-width me-1"></i>Wrap</button>
+                            </div>
+                            <div id="editorCounter" class="text-muted small">Ln 1, Col 1 • 0 chars</div>
+                        </div>
+                        <textarea 
+                            id="codeInput" 
+                            class="form-control code-input" 
+                            placeholder="Paste your any language code here code here...
+
+
+"
+"></textarea>
+                        </div>
+                        
+                        <!-- Row 1: Primary + File/Code actions (Choose file immediately to the right of Explain on desktop) -->
+                        <div class="actions-row row g-2 align-items-center mt-3">
+                            <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+                                <div class="primary-cluster">
+                                    <button id="analyzeBtn" class="btn btn-primary btn-analyze">
+                                        <span class="loading spinner-border spinner-border-sm me-2" role="status"></span>
+                                        Explain Code
+                                    </button>
+                                    <input type="file" id="fileInput" style="display:none" title="Upload file" accept=".txt,.py,.js,.ts,.json,.html,.css,.md,.java,.c,.cpp,.cs,.go,.rb,.php,.rs,.kt,.swift,.sh,.sql,.yml,.yaml,.xml,.ini,.cfg,.toml,.jsx,.tsx" />
+                                    <button id="fileBtn" class="btn btn-outline-secondary" style="border-radius: 25px; padding: 10px 16px;">
+                                        <i class="fas fa-file-arrow-up me-1"></i>Choose file
+                                    </button>
+                                    <span id="fileName" class="text-muted small">No file chosen</span>
+                                </div>
+                                <div class="secondary-cluster">
+                                    <button id="improveBtn" class="btn btn-outline-secondary" title="Suggest better/optimized version">
+                                        <i class="fas fa-wand-magic-sparkles me-1"></i>Improve My Code
+                                    </button>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                            <i class="fas fa-flask me-1"></i>Live Demos
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" id="demoPython">Python</a></li>
+                                            <li><a class="dropdown-item" href="#" id="demoJS">JavaScript</a></li>
+                                            <li><a class="dropdown-item" href="#" id="demoCPP">C++</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Utility actions (Export, Share, Clear) -->
+                        <div class="actions-row row g-2 align-items-center mt-2">
+                            <div class="col-12 col-md d-flex flex-wrap align-items-center gap-2">
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-file-export me-1"></i>Export
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" id="exportMdBtn">Download Markdown</a></li>
+                                        <li><a class="dropdown-item" href="#" id="exportPdfBtn">Download PDF</a></li>
+                                    </ul>
+                                </div>
+                                <button id="shareBtn" class="btn btn-outline-secondary" title="Copy explanation link to clipboard">
+                                    <i class="fas fa-link me-1"></i>Share Link
+                                </button>
+                            </div>
+                            <div class="col-12 col-md-auto d-flex justify-content-md-end">
+                                <button id="clearBtn" class="btn btn-outline-secondary" style="border-radius: 25px; padding: 10px 25px; transition: all 0.3s ease;">
+                                    <i class="fas fa-trash me-2"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Explanation Section -->
+            <div class="col-lg-6">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Code Explanation</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Typing Animation -->
+                        <div id="typingAnimation" class="typing-animation">
+                            <div class="typing-indicator">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <span class="typing-text">AI is analyzing your code...</span>
+                            </div>
+                        </div>
+                        
+                        <div id="explanationContent">
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                                <p>Paste your code and click "Explain Code" to see the magic!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <p class="mb-2 mb-md-0">CodeExplainer - Making code understanding simple</p>
+            <p class="mb-0">Crafted by <span style="color:#ffd54f; font-weight:700;">Arvindra Rajput</span></p>
+        </div>
+    </footer>
+
+    <!-- Theme toggle button -->
+    <button id="themeToggle" class="theme-toggle btn btn-outline-dark" aria-label="Toggle dark mode">
+        <i class="fas fa-moon me-1"></i><span class="label">Dark</span>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        const codeInput = document.getElementById('codeInput');
+        const fileInput = document.getElementById('fileInput');
+        const fileBtn = document.getElementById('fileBtn');
+        const fileName = document.getElementById('fileName');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const improveBtn = document.getElementById('improveBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const wrapToggle = document.getElementById('wrapToggle');
+        const editorCounter = document.getElementById('editorCounter');
+        const themeToggle = document.getElementById('themeToggle');
+        const explanationContent = document.getElementById('explanationContent');
+        const typingAnimation = document.getElementById('typingAnimation');
+        const loading = document.querySelector('.loading');
+        const exportMdBtn = document.getElementById('exportMdBtn');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const demoPython = document.getElementById('demoPython');
+        const demoJS = document.getElementById('demoJS');
+        const demoCPP = document.getElementById('demoCPP');
+
+        let latestAnalysis = null;
+        let latestComplexity = null;
+
+        analyzeBtn.addEventListener('click', analyzeCode);
+        clearBtn.addEventListener('click', clearCode);
+        if (improveBtn) improveBtn.addEventListener('click', improveCode);
+        if (exportMdBtn) exportMdBtn.addEventListener('click', exportMarkdown);
+        if (exportPdfBtn) exportPdfBtn.addEventListener('click', exportPDF);
+        if (shareBtn) shareBtn.addEventListener('click', copyShareLink);
+        if (demoPython) demoPython.addEventListener('click', () => insertDemo('python'));
+        if (demoJS) demoJS.addEventListener('click', () => insertDemo('js'));
+        if (demoCPP) demoCPP.addEventListener('click', () => insertDemo('cpp'));
+
+        // Robust file reading helper (File.text() with FileReader fallback)
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (file && typeof file.text === 'function') {
+                        file.text().then(resolve).catch(() => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsText(file);
+                        });
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsText(file);
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        // File button -> trigger hidden input (reset value so same-file reselection fires 'change')
+        if (fileBtn) {
+            fileBtn.addEventListener('click', () => {
+                if (fileInput) fileInput.value = '';
+                if (fileInput) fileInput.click();
+            });
+        }
+
+        // Handle file selection
+        if (fileInput) {
+            fileInput.addEventListener('change', async (e) => {
+                const files = e && e.target && e.target.files;
+                const file = files && files[0];
+                if (!file) {
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+                try {
+                    const text = await readFileAsText(file);
+                    codeInput.value = text || '';
+                    if (fileName) fileName.textContent = file.name;
+                    codeInput.focus();
+                    updateCounter();
+                } catch (err) {
+                    showError('Could not read the selected file.');
+                } finally {
+                    // Allow selecting the same file again to retrigger 'change'
+                    if (e && e.target) e.target.value = '';
+                }
+            });
+        }
+
+        // Drag & drop support
+        ;['dragenter','dragover'].forEach(evt => {
+            codeInput.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                codeInput.classList.add('drop-highlight');
+            });
+        });
+        ;['dragleave','drop'].forEach(evt => {
+            codeInput.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                codeInput.classList.remove('drop-highlight');
+            });
+        });
+        codeInput.addEventListener('drop', async (e) => {
+            const dt = e && e.dataTransfer;
+            const files = dt && dt.files;
+            const file = files && files[0];
+            if (!file) return;
+            try {
+                const text = await readFileAsText(file);
+                codeInput.value = text || '';
+                codeInput.focus();
+                if (fileName) fileName.textContent = file.name;
+                updateCounter();
+            } catch (err) {
+                showError('Could not read the dropped file.');
+            }
+        });
+
+        // Copy to clipboard
+        if (copyBtn) copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(codeInput.value);
+                const old = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copied';
+                copyBtn.disabled = true;
+                setTimeout(() => { copyBtn.innerHTML = old; copyBtn.disabled = false; }, 1200);
+            } catch {}
+        });
+
+        // Wrap toggle
+        if (wrapToggle) wrapToggle.addEventListener('click', () => {
+            codeInput.classList.toggle('nowrap');
+            const nowrap = codeInput.classList.contains('nowrap');
+            wrapToggle.innerHTML = nowrap
+                ? '<i class="fas fa-text-width me-1"></i>No Wrap'
+                : '<i class="fas fa-text-width me-1"></i>Wrap';
+            codeInput.focus();
+        });
+
+        // Live counter
+        function updateCounter() {
+            if (!editorCounter) return;
+            const pos = codeInput.selectionStart || 0;
+            const before = codeInput.value.slice(0, pos);
+            const lines = before.split(/\r\n|\r|\n/);
+            const line = lines.length;
+            const col = (lines[lines.length - 1] || '').length + 1;
+            const chars = codeInput.value.length;
+            editorCounter.textContent = `Ln ${line}, Col ${col} • ${chars} chars`;
+        }
+        codeInput.addEventListener('input', updateCounter);
+        codeInput.addEventListener('keyup', updateCounter);
+        codeInput.addEventListener('click', updateCounter);
+        codeInput.addEventListener('mouseup', updateCounter);
+        window.addEventListener('load', updateCounter);
+
+        // Theme toggle logic with persistence
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (themeToggle) {
+                    themeToggle.classList.remove('btn-outline-dark');
+                    themeToggle.classList.add('btn-outline-light');
+                    themeToggle.innerHTML = '<i class="fas fa-sun me-1"></i><span class="label">Light</span>';
+                }
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                if (themeToggle) {
+                    themeToggle.classList.remove('btn-outline-light');
+                    themeToggle.classList.add('btn-outline-dark');
+                    themeToggle.innerHTML = '<i class="fas fa-moon me-1"></i><span class="label">Dark</span>';
+                }
+            }
+        }
+
+        // Initialize theme from localStorage or prefers-color-scheme
+        (function initTheme() {
+            try {
+                const saved = localStorage.getItem('theme');
+                if (saved === 'dark' || saved === 'light') {
+                    applyTheme(saved);
+                    return;
+                }
+                // Respect system preference on first load
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                applyTheme(prefersDark ? 'dark' : 'light');
+            } catch (_) {
+                applyTheme('light');
+            }
+        })();
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const next = isDark ? 'light' : 'dark';
+                applyTheme(next);
+                try { localStorage.setItem('theme', next); } catch (_) {}
+            });
+        }
+
+        function analyzeCode() {
+            const code = codeInput.value.trim();
+            
+            if (!code) {
+                showError('Please enter some code to analyze.');
+                return;
+            }
+
+            // Show loading state and typing animation
+            analyzeBtn.disabled = true;
+            typingAnimation.style.display = 'block';
+            explanationContent.style.display = 'none';
+            
+            // Add button loading effect (use temporary spinner inside the label)
+            analyzeBtn.innerHTML = '<span class="loading-spinner me-2"></span>Analyzing...';
+            const tempSpinner = analyzeBtn.querySelector('.loading-spinner');
+            if (tempSpinner) tempSpinner.style.display = 'inline-block';
+            
+            // Update typing animation text
+            const typingText = typingAnimation.querySelector('.typing-text');
+            const messages = [
+                'AI is analyzing your code...',
+                'Detecting programming language...',
+                'Generating detailed explanation...',
+                'Almost done...'
+            ];
+            
+            let messageIndex = 0;
+            const messageInterval = setInterval(() => {
+                typingText.textContent = messages[messageIndex];
+                messageIndex = (messageIndex + 1) % messages.length;
+            }, 1500);
+
+            // Send code to backend (analysis)
+            const analysisPromise = fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code: code })
+            })
+            .then(r => r.json());
+
+            // Complexity request in parallel
+            const complexityPromise = fetch('/complexity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            }).then(r => r.json()).catch(() => null);
+
+            Promise.all([analysisPromise, complexityPromise])
+                .then(([data, cx]) => {
+                    latestAnalysis = data && !data.error ? data : null;
+                    latestComplexity = cx && !cx.error ? cx : null;
+                    if (data && data.error) {
+                        showError(data.error);
+                    } else if (data) {
+                        displayExplanation(data, latestComplexity);
+                    } else {
+                        showError('Failed to analyze code.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showError('Failed to analyze code. Please try again.');
+                })
+                .finally(() => {
+                    clearInterval(messageInterval);
+                    analyzeBtn.disabled = false;
+                    typingAnimation.style.display = 'none';
+                    explanationContent.style.display = 'block';
+                    analyzeBtn.innerHTML = '<span class="loading spinner-border spinner-border-sm me-2" role="status"></span>Explain Code';
+                });
+        }
+
+        function displayExplanation(data, cx) {
+            const { language, overall_explanation, potential_issues } = data;
+            const timeC = cx && cx.time ? cx.time : 'O(?)';
+            const spaceC = cx && cx.space ? cx.space : 'O(?)';
+            const notes = (cx && Array.isArray(cx.notes)) ? cx.notes : [];
+            
+            let html = `
+                <div class="mb-3 animate-fade-in">
+                    <span class="language-badge">${language.toUpperCase()}</span>
+                    <span class="badge bg-info ms-2" title="Estimated time complexity">Time: ${timeC}</span>
+                    <span class="badge bg-secondary ms-1" title="Estimated space complexity">Space: ${spaceC}</span>
+                </div>
+                
+                <div class="explanation-card animate-slide-in">
+                    <h6 class="fw-bold text-primary">Overall Explanation</h6>
+                    <div class="mb-0">${renderContent(overall_explanation)}</div>
+                </div>
+                
+                ${Array.isArray(potential_issues) && potential_issues.length ? `
+                <div class="explanation-card animate-slide-in">
+                    <h6 class="fw-bold text-danger">Potential Issues / Bugs</h6>
+                    <ul class="mb-0">
+                        ${potential_issues.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+
+                ${notes.length ? `
+                <div class="explanation-card animate-slide-in">
+                    <h6 class="fw-bold text-dark">Complexity Analysis Notes</h6>
+                    <ul class="mb-0">
+                        ${notes.map(n => `<li>${escapeHtml(n)}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            `;
+
+            explanationContent.innerHTML = html;
+            
+            // Add smooth scroll to explanation
+            explanationContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function improveCode() {
+            const code = codeInput.value.trim();
+            if (!code) { showError('Please enter some code first.'); return; }
+            try {
+                improveBtn.disabled = true;
+                improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Improving...';
+                const resp = await fetch('/improve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, answer_language: 'english' })
+                });
+                const data = await resp.json();
+                if (data && !data.error) {
+                    appendImprovement(data);
+                } else {
+                    showError(data.error || 'Failed to improve code.');
+                }
+            } catch (e) {
+                showError('Failed to improve code.');
+            } finally {
+                improveBtn.disabled = false;
+                improveBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-1"></i>Improve My Code';
+            }
+        }
+
+        function appendImprovement(data) {
+            const container = document.createElement('div');
+            container.className = 'explanation-card animate-slide-in';
+            const tipsHtml = data.tips ? renderContent(data.tips) : '';
+            const improvedCode = data.improved_code || '';
+            const lang = (data.language || 'text').toLowerCase();
+            container.innerHTML = `
+                <h6 class="fw-bold text-success"><i class="fas fa-wand-magic-sparkles me-1"></i>Suggested Improvements</h6>
+                <div class="mb-3">${tipsHtml}</div>
+                <h6 class="fw-bold">Optimized Version</h6>
+                <pre><code class="language-${escapeHtml(lang)}">${escapeHtml(improvedCode)}</code></pre>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-primary" id="applyImprovedBtn"><i class="fas fa-check me-1"></i>Replace Input</button>
+                </div>
+            `;
+            explanationContent.appendChild(container);
+            const applyBtn = container.querySelector('#applyImprovedBtn');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', () => {
+                    codeInput.value = improvedCode;
+                    updateCounter();
+                    codeInput.focus();
+                });
+            }
+        }
+
+        function exportMarkdown() {
+            if (!latestAnalysis) { showError('Run an explanation first.'); return; }
+            const code = codeInput.value || '';
+            const langUp = (latestAnalysis.language || 'code').toUpperCase();
+            const cx = latestComplexity || {};
+            const md = `# CodeExplainer Report\n\n`+
+`**Language:** ${langUp}\n\n`+
+`**Time Complexity:** ${cx.time || 'O(?)'}  \n`+
+`**Space Complexity:** ${cx.space || 'O(?)'}\n\n`+
+`## Explanation\n\n`+
+`${stripHtml(latestAnalysis.overall_explanation || '')}\n\n`+
+`${Array.isArray(latestAnalysis.potential_issues) && latestAnalysis.potential_issues.length ? '## Potential Issues / Bugs\n' + latestAnalysis.potential_issues.map(i=>`- ${i}`).join('\n') + '\n\n' : ''}`+
+`## Source Code\n\n`+
+`\`\`\`${(latestAnalysis.language||'')}`+"\n"+code+"\n"+`\`\`\``;
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'codeexplainer_report.md';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function exportPDF() {
+            if (!latestAnalysis) { showError('Run an explanation first.'); return; }
+            const element = explanationContent.cloneNode(true);
+            // Ensure visible for capture
+            element.style.padding = '16px';
+            const opt = { filename: 'codeexplainer_report.pdf', margin: 10, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            if (window.html2pdf) {
+                window.html2pdf().set(opt).from(element).save();
+            } else {
+                showError('PDF library failed to load.');
+            }
+        }
+
+        function copyShareLink() {
+            const code = codeInput.value || '';
+            const base = window.location.origin + window.location.pathname;
+            const encoded = b64EncodeUnicode(code);
+            const url = `${base}?auto=1&code=${encodeURIComponent(encoded)}`;
+            navigator.clipboard.writeText(url).then(() => {
+                const old = shareBtn.innerHTML;
+                shareBtn.innerHTML = '<i class="fas fa-check me-1"></i>Link Copied';
+                shareBtn.disabled = true;
+                setTimeout(()=>{ shareBtn.innerHTML = '<i class="fas fa-link me-1"></i>Share Link'; shareBtn.disabled = false; }, 1200);
+            }).catch(()=>{});
+        }
+
+        function b64EncodeUnicode(str) { // safe base64 for unicode
+            try { return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function toSolidBytes(match, p1) { return String.fromCharCode('0x' + p1); })); } catch { return btoa(str); }
+        }
+        function b64DecodeUnicode(str) {
+            try { return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')); } catch { return atob(str); }
+        }
+
+        function stripHtml(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html || '';
+            return (div.textContent || div.innerText || '').trim();
+        }
+
+        function insertDemo(kind) {
+            const snippets = {
+                python: `def two_sum(nums, target):\n    lookup = {}\n    for i, n in enumerate(nums):\n        if target - n in lookup:\n            return [lookup[target - n], i]\n        lookup[n] = i\n    return []\n\nprint(two_sum([2,7,11,15], 9))`,
+                js: `function fibonacci(n){\n  if(n<=1) return n;\n  let a=0,b=1;\n  for(let i=2;i<=n;i++){\n    [a,b]=[b,a+b];\n  }\n  return b;\n}\nconsole.log(fibonacci(10));`,
+                cpp: `#include <bits/stdc++.h>\nusing namespace std;\nint main(){\n  vector<int> v={1,2,3,4,5};\n  long long sum=0;\n  for(int x: v) sum += x;\n  cout << sum << "\\n";\n  return 0;\n}`
+            };
+            const code = snippets[kind] || '';
+            codeInput.value = code;
+            updateCounter();
+            codeInput.focus();
+        }
+
+        function showError(message) {
+            explanationContent.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function clearCode() {
+            codeInput.value = '';
+            explanationContent.innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                    <p>Paste your code and click "Explain Code" to see the magic!</p>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderContent(text) {
+            if (!text) return '';
+            try {
+                // Normalize triple-backtick blocks like ```python print() ``` into proper fences
+                // Ensure fenced code blocks are on separate lines for Markdown parser
+                let normalized = text
+                    // opening fence with language -> force newline after language
+                    .replace(/```\s*([a-zA-Z0-9_+-]*)\s+/g, '```$1\n')
+                    // opening fence without language -> ensure newline
+                    .replace(/```\s+(?=[^\n])/g, '```\n')
+                    // ensure newline before closing fence
+                    .replace(/\s+```/g, '\n```');
+
+                // If a fenced block only contains a single HTML heading, unwrap it to render properly
+                normalized = normalized.replace(/```\s*(?:html)?\s*\n\s*(<h[1-6][\s\S]*?<\/h[1-6]>)\s*\n```/gi, '$1');
+
+                const looksLikeMarkdown = /```/.test(normalized) || /\n#{1,6}\s/.test(normalized) || /\*\*[^*]+\*\*/.test(normalized);
+                if (typeof marked !== 'undefined' && looksLikeMarkdown) {
+                    marked.setOptions({ breaks: true, gfm: true });
+                    return marked.parse(normalized);
+                }
+                return normalized; // treat as HTML/plain
+            } catch (e) {
+                return text;
+            }
+        }
+
+        // Auto-load code from share URL and optionally auto-run
+        (function initFromURL(){
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const codeParam = params.get('code');
+                const auto = params.get('auto');
+                if (codeParam) {
+                    const decoded = b64DecodeUnicode(decodeURIComponent(codeParam));
+                    codeInput.value = decoded;
+                    updateCounter();
+                    if (auto === '1') analyzeCode();
+                }
+            } catch (_) {}
+        })();
+    </script>
+</body>
+</html>
