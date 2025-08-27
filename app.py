@@ -768,10 +768,27 @@ def favicon():
     """Serve the favicon from the project logo."""
     return send_from_directory(
         os.path.join(app.root_path, 'static', 'img'),
-        'logo.png',
+        'icon.png',
         mimetype='image/png',
         cache_timeout=0
     )
 
+# Test route to verify static file serving
+@app.route('/test-icon')
+def test_icon():
+    return f"""
+    <html>
+    <head>
+        <title>Test Icon</title>
+        <link rel="icon" type="image/png" href="{{{{ url_for('static', filename='img/icon.png') }}}}">
+    </head>
+    <body>
+        <h1>Test Icon Page</h1>
+        <p>Check if the favicon appears in your browser tab.</p>
+        <p>Direct link to icon: <a href="{{{{ url_for('static', filename='img/icon.png') }}}}">icon.png</a></p>
+    </body>
+    </html>
+    """
+
 if __name__ == '__main__':
-    app.run( host='0.0.0.0' , debug=True)
+    app.run(host='0.0.0.0' , debug=True)
