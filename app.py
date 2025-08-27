@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import re
 import ast
 import keyword
 import os
-from dotenv import load_dotenv
 import httpx
 import json
 import requests
@@ -12,8 +11,7 @@ try:
 except ImportError:
     Groq = None
 
-# Load environment variables
-load_dotenv()
+
 
 app = Flask(__name__)
 
@@ -28,7 +26,7 @@ class CloudAIClient:
                 print(f"Removing proxy environment variable: {proxy_var}")
                 os.environ.pop(proxy_var, None)
         
-        groq_api_key = os.getenv('GROQ_API_KEY')
+        groq_api_key = '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'
         if not groq_api_key:
             print("Warning: GROQ_API_KEY not found in environment variables")
             return
@@ -765,6 +763,15 @@ def improve():
     except Exception as e:
         return jsonify({'error': f'Improve failed: {str(e)}'}), 500
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+@app.route('/favicon.ico')
+def favicon():
+    """Serve the favicon from the project logo."""
+    return send_from_directory(
+        os.path.join(app.root_path, 'static', 'img'),
+        'logo.png',
+        mimetype='image/png',
+        cache_timeout=0
+    )
 
+if __name__ == '__main__':
+    app.run(debug=True)
