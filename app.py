@@ -26,7 +26,7 @@ class CloudAIClient:
                 print(f"Removing proxy environment variable: {proxy_var}")
                 os.environ.pop(proxy_var, None)
         
-        groq_api_key = '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'
+        groq_api_key = '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'
         if not groq_api_key:
             print("Warning: GROQ_API_KEY not found in environment variables")
             return
